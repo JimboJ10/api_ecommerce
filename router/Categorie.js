@@ -14,10 +14,9 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage })
 const router = routerx();
-// http://localhost:3000/api/users/register
 
-router.post("/register",[auth.verifyAdmin, upload.single('imagen')],categoriecontroller.register);
-router.put("/update",[auth.verifyAdmin, upload.single('imagen')],categoriecontroller.update);
+router.post("/register",[auth.verifyAdmin, upload.single('portada')],categoriecontroller.register);
+router.put("/update",[auth.verifyAdmin, upload.single('portada')],categoriecontroller.update);
 router.get("/list",auth.verifyAdmin,categoriecontroller.list);
 router.delete("/delete",auth.verifyAdmin,categoriecontroller.remove);
 

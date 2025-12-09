@@ -5,7 +5,6 @@ const ProductSchema = new Schema({
     slug:{type:String,required:true,maxlength:1000},
     sku:{type:String,required:true},
     categorie:{type:Schema.ObjectId,ref:'categorie',required:true},
-    price_soles:{type:Number,required:true},
     price_usd:{type:Number,required:true},
     portada:{type:String,required:true},
     galerias:[{type:Object,required:false}],

@@ -19,8 +19,10 @@ export default {
             }
 
             data.slug = data.title.toLowerCase().replace(/ /g,'-').replace(/[^\w-]+/g,'');
-            if(req.files){
-                var img_path = req.files.imagen.path;
+            
+            // CAMBIAR: de req.files a req.file (singular)
+            if(req.file){
+                var img_path = req.file.path;
                 var name = img_path.split('\\');
                 var portada_name = name[2];
                 data.portada = portada_name;
@@ -34,8 +36,9 @@ export default {
 
         } catch (error) {
             res.status(500).send({
-                message: "COURRIO UN PROBLEMA"
+                message: "OCURRIO UN PROBLEMA"
             });
+            console.log(error);
         }
     },
     update:async(req,res) => {
@@ -53,8 +56,10 @@ export default {
             }
 
             data.slug = data.title.toLowerCase().replace(/ /g,'-').replace(/[^\w-]+/g,'');
-            if(req.files && req.files.imagen){
-                var img_path = req.files.imagen.path;
+            
+            // CAMBIAR: de req.files a req.file (singular)
+            if(req.file){
+                var img_path = req.file.path;
                 var name = img_path.split('\\');
                 var portada_name = name[2];
                 data.portada = portada_name;
@@ -63,13 +68,14 @@ export default {
             await models.Product.findByIdAndUpdate({_id:data._id},data);
 
             res.status(200).json({
-                message: "EL PRODUCTO SE REGISTRO SE ACTUALIZO CON EXITO"
+                message: "EL PRODUCTO SE ACTUALIZO CON EXITO"
             });
 
         } catch (error) {
             res.status(500).send({
-                message: "COURRIO UN PROBLEMA"
+                message: "OCURRIO UN PROBLEMA"
             });
+            console.log(error);
         }
     },
     list:async(req,res) => {
@@ -86,7 +92,7 @@ export default {
                 );
             }
             let products = await models.Product.find({
-                $and:filter,
+                $and:filter.length > 0 ? filter : [{}],
             }).populate('categorie')
             products = products.map(product => {
                 return resources.Product.product_list(product);
@@ -97,8 +103,9 @@ export default {
             })
         } catch (error) {
             res.status(500).send({
-                message: "COURRIO UN PROBLEMA"
+                message: "OCURRIO UN PROBLEMA"
             });
+            console.log(error);
         }
     },
     remove:async(req,res) => {
@@ -111,8 +118,9 @@ export default {
             });
         } catch (error) {
             res.status(500).send({
-                message: "COURRIO UN PROBLEMA"
+                message: "OCURRIO UN PROBLEMA"
             });
+            console.log(error);
         }
     },
     obtener_imagen:async(req,res) => {
@@ -153,7 +161,8 @@ export default {
     },
     register_imagen:async(req,res) => {
         try {
-            var img_path = req.files.imagen.path;
+            // CAMBIAR: de req.files a req.file
+            var img_path = req.file.path;
             var name = img_path.split('\\');
             var imagen_name = name[2];
             
@@ -161,7 +170,7 @@ export default {
                 $push: {
                     galerias: {
                         imagen: imagen_name,
-                        _id: req.body.__id
+                        _id: req.body.imagen_id
                     }
                 }
             })
@@ -169,13 +178,14 @@ export default {
                 message: "LA IMAGEN SE SUBIO PERFECTAMENTE",
                 imagen: {
                     imagen: process.env.URL_BACKEND+'/api/products/uploads/product/'+imagen_name,
-                    _id: req.body.__id
+                    _id: req.body.imagen_id
                 }
             })
         } catch (error) {
             res.status(500).send({
                 message: "OCURRIO UN PROBLEMA"
             });
+            console.log(error);
         }
     },
     remove_imagen:async(req,res) => {
@@ -183,7 +193,7 @@ export default {
             await models.Product.findByIdAndUpdate({_id: req.body._id},{
                 $pull: {
                     galerias: {
-                        _id: req.body.__id
+                        _id: req.body.imagen_id
                     }
                 }
             })
@@ -194,6 +204,7 @@ export default {
             res.status(500).send({
                 message: "OCURRIO UN PROBLEMA"
             });
+            console.log(error);
         }
     },
 }

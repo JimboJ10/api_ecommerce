@@ -2,14 +2,14 @@ import models from '../models/index.js'
 import resource from '../resources/index.js'
 import fs from 'fs'
 import path from 'path'
+
 export default {
     register: async(req,res) => {
         try {
-            if(req.files){
-                var img_path = req.files.portada.path;
+            if(req.file){
+                var img_path = req.file.path;
                 var name = img_path.split('\\');
                 var portada_name = name[2];
-                // console.log(portada_name)
                 req.body.imagen = portada_name;
             }
             const categorie = await models.Categorie.create(req.body);
@@ -23,11 +23,10 @@ export default {
     },
     update: async(req,res) => {
         try {
-            if(req.files && req.files.portada){
-                var img_path = req.files.portada.path;
+            if(req.file){
+                var img_path = req.file.path;
                 var name = img_path.split('\\');
                 var portada_name = name[2];
-                // console.log(portada_name)
                 req.body.imagen = portada_name;
             }
             await models.Categorie.findByIdAndUpdate({_id: req.body._id},req.body);
@@ -53,8 +52,8 @@ export default {
                 ]
             }).sort({'createdAt': -1});
 
-            Categories = Categories.map((user) => {
-                return resource.Categorie.categorie_list(user);
+            Categories = Categories.map((categorie) => {
+                return resource.Categorie.categorie_list(categorie);
             })
 
             res.status(200).json({

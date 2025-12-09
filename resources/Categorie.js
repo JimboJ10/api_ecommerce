@@ -6,6 +6,8 @@ export default {
             imagen: categorie.imagen,
             imagen_home: process.env.URL_BACKEND+'/api/categories/uploads/categorie/'+categorie.imagen,
             state: categorie.state,
+            createdAt: categorie.createdAt,
+            updatedAt: categorie.updatedAt
         }
     }
 }
