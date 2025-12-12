@@ -10,7 +10,6 @@ export default {
                 slug: cart.product.slug,
                 imagen: process.env.URL_BACKEND+'/api/products/uploads/product/'+cart.product.portada,//*
                 categorie: cart.product.categorie,
-                price_soles: cart.product.price_soles,
                 price_usd: cart.product.price_usd,
             },
             type_discount: cart.type_discount,

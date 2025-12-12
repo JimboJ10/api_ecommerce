@@ -239,7 +239,6 @@ export default {
                             slug: detail_order.product.slug,
                             imagen: process.env.URL_BACKEND+'/api/products/uploads/product/'+detail_order.product.portada,//*
                             categorie: detail_order.product.categorie,
-                            price_soles: detail_order.product.price_soles,
                             price_usd: detail_order.product.price_usd,
                         },
                         type_discount: detail_order.type_discount,
