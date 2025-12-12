@@ -6,4 +6,5 @@ const router = routerx();
 
 router.post("/register",auth.verifyEcommerce,SaleController.register);
 // router.get("/send_email/:id",SaleController.send_email);
+router.get("/show/:id",auth.verifyEcommerce,SaleController.show);
 export default router;

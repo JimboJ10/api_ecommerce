@@ -114,4 +114,23 @@ export default {
             });
         }
     },
+    show: async(req,res) => {
+        try {
+            let sale_id = req.params.id;
+            let SALE = await models.Sale.findById({_id: sale_id}).populate("user");
+            let SALE_DETAILS = await models.SaleDetail.find({sale: sale_id}).populate("product").populate("variedad");
+            let SALE_ADDRESS = await models.SaleAddress.findOne({sale: sale_id});
+
+            res.status(200).json({
+                sale: SALE,
+                sale_details: SALE_DETAILS,
+                sale_address: SALE_ADDRESS,
+            });
+        } catch (error) {
+            console.log(error);
+            res.status(500).send({
+                message: "HUBO UN ERROR",
+            });
+        }
+    }
 }
