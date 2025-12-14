@@ -1,9 +1,24 @@
 import models from '../models/index.js'
 import resource from '../resources/index.js'
+
 export default {
-    list:async(req,res) => {
+    list: async(req, res) => {
         try {
+            // 🔴 OBTENER user_id del query o del token
             let user_id = req.query.user_id;
+            
+            // Si NO viene user_id en query, usar el del token
+            if (!user_id) {
+                if (!req.user || !req.user.sub) {
+                    return res.status(401).json({
+                        message: "NO AUTORIZADO - Token inválido"
+                    });
+                }
+                user_id = req.user.sub;
+            }
+            
+            console.log('🔍 Obteniendo carrito del usuario:', user_id);
+            
             let CARTS = await models.Cart.find({
                 user: user_id,
             }).populate("variedad").populate({
@@ -17,19 +32,25 @@ export default {
                 return resource.Cart.cart_list(cart);
             });
 
+            console.log(`✅ Carrito obtenido: ${CARTS.length} items`);
+
             res.status(200).json({
                 carts: CARTS,
             })
         } catch (error) {
+            console.error('❌ Error al obtener carrito:', error);
             res.status(500).send({
-                message:"OCURRIO UN ERROR",
+                message: "OCURRIO UN ERROR",
             });
-            console.log(error);
         }
     },
+
     register:async(req,res) => {
         try {
             let data = req.body;
+            
+            console.log('📝 Registrando en carrito:', data);
+
             //PRIMERO VAMOS A VALIDAR SI EL PRODUCTO EXISTE EN EL CARRITO DE COMPRA
             if(data.variedad){
                 let valid_cart = await models.Cart.findOne({
@@ -38,11 +59,10 @@ export default {
                     product: data.product,
                 });
                 if(valid_cart){
-                    res.status(200).json({
+                    return res.status(200).json({
                         message: 403,
                         message_text: "EL PRODUCTO CON LA VARIEDAD YA EXISTE EN EL CARRITO DE COMPRA",
-                    })
-                    return;
+                    });
                 }
             }else{
                 let valid_cart = await models.Cart.findOne({
@@ -50,206 +70,174 @@ export default {
                     product: data.product,
                 });
                 if(valid_cart){
-                    res.status(200).json({
+                    return res.status(200).json({
                         message: 403,
                         message_text: "EL PRODUCTO YA EXISTE EN EL CARRITO DE COMPRA",
-                    })
-                    return;
+                    });
                 }
             }
 
             //SEGUNDO VAMOS A VALIDAR SI EL STOCK ESTA DISPONIBLE
-
             if(data.variedad){
-                let valid_variedad = await models.Variedad.findOne({
-                    id_: data.variedad,
-                });
+                let valid_variedad = await models.Variedad.findById(data.variedad);
                 if(valid_variedad.stock < data.cantidad){
-                    res.status(200).json({
-                        message: 403,
-                        message_text: "EL STOCK NO ESTA DISPONIBLE"
-                    })
-                    return;
-                }
-            }else{
-                let valid_product = await models.Product.findOne({
-                    _id: data.product,
-                });
-                if(valid_product.stock < data.cantidad){
-                    res.status(200).json({
+                    return res.status(200).json({
                         message: 403,
                         message_text: "EL STOCK NO ESTA DISPONIBLE"
                     });
-                    return;
+                }
+            }else{
+                let valid_product = await models.Product.findById(data.product);
+                if(valid_product.stock < data.cantidad){
+                    return res.status(200).json({
+                        message: 403,
+                        message_text: "EL STOCK NO ESTA DISPONIBLE"
+                    });
                 }
             }
+            
             let CART = await models.Cart.create(data);
             
-            let NEW_CART = await models.Cart.findById({_id: CART._id}).populate("variedad").populate({
-                path: "product",
-                populate: {
-                    path: "categorie"
-                },
-            });
+            let NEW_CART = await models.Cart.findById(CART._id)
+                .populate("variedad")
+                .populate({
+                    path: "product",
+                    populate: {
+                        path: "categorie"
+                    },
+                });
+
             res.status(200).json({
                 cart: resource.Cart.cart_list(NEW_CART),
                 message_text: "EL CARRITO SE REGISTRO CON EXITO",
-            })
+            });
         } catch (error) {
+            console.error('❌ Error al registrar carrito:', error);
             res.status(500).send({
                 message:"OCURRIO UN ERROR",
             });
-            console.log(error);
         }
     },
+
     update:async(req,res) => {
         try {
             let data = req.body;
 
-            //SEGUNDO VAMOS A VALIDAR SI EL STOCK ESTA DISPONIBLE
-
+            //VALIDAR SI EL STOCK ESTA DISPONIBLE
             if(data.variedad){
-                let valid_variedad = await models.Variedad.findOne({
-                    id_: data.variedad,
-                });
+                let valid_variedad = await models.Variedad.findById(data.variedad);
                 if(valid_variedad.stock < data.cantidad){
-                    res.status(200).json({
-                        message: 403,
-                        message_text: "EL STOCK NO ESTA DISPONIBLE"
-                    })
-                    return;
-                }
-            }else{
-                let valid_product = await models.Product.findOne({
-                    _id: data.product,
-                });
-                if(valid_product.stock < data.cantidad){
-                    res.status(200).json({
+                    return res.status(200).json({
                         message: 403,
                         message_text: "EL STOCK NO ESTA DISPONIBLE"
                     });
-                    return;
+                }
+            }else{
+                let valid_product = await models.Product.findById(data.product);
+                if(valid_product.stock < data.cantidad){
+                    return res.status(200).json({
+                        message: 403,
+                        message_text: "EL STOCK NO ESTA DISPONIBLE"
+                    });
                 }
             }
-            let CART = await models.Cart.findByIdAndUpdate({_id: data._id},data);
             
-            let NEW_CART = await models.Cart.findById({_id: CART._id}).populate("variedad").populate({
-                path: "product",
-                populate: {
-                    path: "categorie"
-                },
-            });
+            await models.Cart.findByIdAndUpdate(data._id, data);
+            
+            let NEW_CART = await models.Cart.findById(data._id)
+                .populate("variedad")
+                .populate({
+                    path: "product",
+                    populate: {
+                        path: "categorie"
+                    },
+                });
+
             res.status(200).json({
                 cart: resource.Cart.cart_list(NEW_CART),
                 message_text: "EL CARRITO SE ACTUALIZO CON EXITO",
-            })
+            });
         } catch (error) {
+            console.error('❌ Error al actualizar carrito:', error);
             res.status(500).send({
                 message:"OCURRIO UN ERROR",
             });
-            console.log(error);
         }
     },
+
     delete:async(req,res) => {
         try {
             let _id = req.params.id;
-            let CART = await models.Cart.findByIdAndDelete({_id: _id});
+            await models.Cart.findByIdAndDelete(_id);
 
             res.status(200).json({
                 message_text: "EL CARRITO SE ELIMINO CORRECTAMENTE",
             });
         } catch (error) {
+            console.error('❌ Error al eliminar carrito:', error);
             res.status(500).send({
                 message:"OCURRIO UN ERROR",
             });
-            console.log(error);
         }
     },
+
     applyCupon:async(req,res) => {
         try {
             let data = req.body;
-            // LA PRIMERA VALIDACIÓN TIENE QUE VER CON LA EXISTENCIA DEL CUPON
+            
+            // Validar existencia del cupón
             let CUPON = await models.Cupone.findOne({
                 code: data.code,
-            })
+            });
+            
             if(!CUPON){
-                res.status(200).json({
+                return res.status(200).json({
                     message: 403,
                     message_text: "EL CUPON INGRESADO NO EXISTE, DIGITE OTRO NUEVAMENTE"
                 });
-                return;
             }
-            // TIENE CON EL USO DEL CUPON -- ESPERA 
 
-            //la parte operativa
-            
+            // Obtener carritos del usuario
             let carts = await models.Cart.find({user: data.user_id}).populate("product");
-            console.log(carts);
-            let products = [];
-            let categories = [];
+            
+            let products = CUPON.products.map(p => p._id);
+            let categories = CUPON.categories.map(c => c._id);
 
-            CUPON.products.forEach((product) => {
-                products.push(product._id);
-            });
-            //[837373.838383]
-            //[{_id: 837373},{_id: 838383}].includes
-            CUPON.categories.forEach((categorie) => {
-                categories.push(categorie._id);
-            });
-            console.log(products);
-            console.log(categories);
+            // Aplicar cupón
             for (const cart of carts) {
-                if(products.length > 0){
-                    if(products.includes(cart.product._id+"")){
-                        let subtotal = 0;
-                        let total = 0;
-                        if(CUPON.type_discount == 1){//PORCENTAJE
-                            subtotal = cart.price_unitario - cart.price_unitario*(CUPON.discount*0.01);
-                        }else{//POR MONEDA
-                            subtotal = cart.price_unitario - CUPON.discount;
-                        }
-                        total = subtotal * cart.cantidad;
+                let discount = 0;
+                let type_discount = CUPON.type_discount;
 
-                        await models.Cart.findByIdAndUpdate({_id: cart._id},{
-                            subtotal: subtotal,
-                            total: total,
-                            type_discount: CUPON.type_discount,
-                            discount: CUPON.discount,
-                            code_cupon: CUPON.code,
-                        });
-                    }
+                if(products.length > 0 && products.includes(cart.product._id.toString())){
+                    discount = CUPON.discount;
+                } else if(categories.length > 0 && categories.includes(cart.product.categorie.toString())){
+                    discount = CUPON.discount;
                 }
-                if(categories.length > 0){
-                    if(categories.includes(cart.product.categorie+"")){
-                        let subtotal = 0;
-                        let total = 0;
-                        if(CUPON.type_discount == 1){//PORCENTAJE
-                            subtotal = cart.price_unitario - cart.price_unitario*(CUPON.discount*0.01);
-                        }else{//POR MONEDA
-                            subtotal = cart.price_unitario - CUPON.discount;
-                        }
-                        total = subtotal * cart.cantidad;
 
-                        await models.Cart.findByIdAndUpdate({_id: cart._id},{
-                            subtotal: subtotal,
-                            total: total,
-                            type_discount: CUPON.type_discount,
-                            discount: CUPON.discount,
-                            code_cupon: CUPON.code,
-                        });
-                    }
+                if(discount > 0){
+                    let new_price = type_discount === 1 
+                        ? cart.product.price_usd - (cart.product.price_usd * discount / 100)
+                        : cart.product.price_usd - discount;
+
+                    await models.Cart.findByIdAndUpdate(cart._id, {
+                        code_cupon: CUPON.code,
+                        type_discount: type_discount,
+                        discount: discount,
+                        price_unitario: new_price,
+                        total: new_price * cart.cantidad
+                    });
                 }
             }
 
             res.status(200).json({
                 message: 200,
-                message_text: "EL CUPON SE APLICADO CORRECTAMENTE",
+                message_text: "EL CUPON SE APLICO CORRECTAMENTE",
             });
         } catch (error) {
+            console.error('❌ Error al aplicar cupón:', error);
             res.status(500).send({
                 message:"OCURRIO UN ERROR",
-            });
-            console.log(error); 
+            }); 
         }
     },
 }

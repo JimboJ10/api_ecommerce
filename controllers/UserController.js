@@ -49,34 +49,34 @@ export default {
     },
     login: async(req,res) => {
         try {
-            const user = await models.User.findOne({email: req.body.email,state:1});
+            const user = await models.User.findOne({email: req.body.email, state:1});
+            
             if(user){
-                //SI ESTA RGISTRADO EN EL SISTEMA
-                let compare = await bcrypt.compare(req.body.password,user.password);
+                let compare = await bcrypt.compare(req.body.password, user.password);
+                
                 if(compare){
-                    let tokenT = await token.encode(user._id,user.rol,user.email);
+                    let tokenT = await token.encode(user._id, user.rol, user.email);
 
-                    const USER_FRONTED = {
-                        token:tokenT,
+                    // 🔴 CAMBIAR ESTRUCTURA DE RESPUESTA
+                    res.status(200).json({
+                        token: tokenT,
                         user: {
                             _id: user._id,
                             name: user.name,
                             email: user.email,
                             surname: user.surname,
                             avatar: user.avatar,
-                        },
-                    }
-
-                    res.status(200).json({
-                        USER_FRONTED:USER_FRONTED,
-                    })
-                }else{
-                    res.status(500).send({
-                        message: "EL USUARIO NO EXISTE"
+                            rol: user.rol,
+                            phone: user.phone,
+                        }
+                    });
+                } else {
+                    res.status(401).send({
+                        message: "LA CONTRASEÑA ES INCORRECTA"
                     });
                 }
-            }else{
-                res.status(500).send({
+            } else {
+                res.status(404).send({
                     message: "EL USUARIO NO EXISTE"
                 });
             }
