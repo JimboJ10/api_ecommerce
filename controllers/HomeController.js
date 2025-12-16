@@ -124,18 +124,28 @@ export default {
     },
     show_landing_product: async(req, res) => {
         try {
-            let SLUG = req.params.slug;
+            let identifier = req.params.slug;
             let DISCOUNT_ID = req.query._id;
             
-            // 🔴 AGREGAR LOGS
-            console.log('🔍 Buscando producto con slug:', SLUG);
+            console.log('🔍 Buscando producto con identificador:', identifier);
             console.log('🔍 Discount ID:', DISCOUNT_ID);
             
-            let Product = await models.Product.findOne({ slug: SLUG, state: 2 }).populate('categorie');
+            // 🔴 BUSCAR POR SLUG O POR _ID
+            let Product;
             
-            // 🔴 VALIDAR SI EXISTE
+            // Verificar si es un ObjectId válido (24 caracteres hexadecimales)
+            const isObjectId = /^[0-9a-fA-F]{24}$/.test(identifier);
+            
+            if (isObjectId) {
+                console.log('🆔 Es un ObjectId, buscando por _id...');
+                Product = await models.Product.findOne({ _id: identifier, state: 2 }).populate('categorie');
+            } else {
+                console.log('🔖 Es un slug, buscando por slug...');
+                Product = await models.Product.findOne({ slug: identifier, state: 2 }).populate('categorie');
+            }
+            
             if (!Product) {
-                console.error('❌ Producto no encontrado con slug:', SLUG);
+                console.error('❌ Producto no encontrado con identificador:', identifier);
                 return res.status(404).json({
                     message: 'PRODUCTO NO ENCONTRADO'
                 });
@@ -145,38 +155,25 @@ export default {
             
             let VARIEDADES = await models.Variedad.find({ product: Product._id });
             let REVIEWS = await models.Review.find({ product: Product._id }).populate('user');
-            
-            let AVG_REVIEW = REVIEWS.length > 0 
-                ? Math.ceil(REVIEWS.reduce((sum, item) => sum + item.cantidad, 0) / REVIEWS.length) 
-                : 0;
+            let AVG_REVIEW = REVIEWS.length > 0 ? Math.ceil(REVIEWS.reduce((sum, item) => sum + item.cantidad, 0) / REVIEWS.length) : 0;
             let COUNT_REVIEW = REVIEWS.length;
-            
+
             let DISCOUNT_EXITS = null;
             if (DISCOUNT_ID) {
-                let DISCOUNT = await models.Discount.findById({ _id: DISCOUNT_ID });
-                if (DISCOUNT) {
-                    if (DISCOUNT.type_segment == 1) {
-                        let existProduct = DISCOUNT.products.find(p => p._id == Product._id.toString());
-                        if (existProduct) {
-                            DISCOUNT_EXITS = DISCOUNT;
-                        }
-                    } else {
-                        let existCategorie = DISCOUNT.categories.find(c => c._id == Product.categorie._id.toString());
-                        if (existCategorie) {
-                            DISCOUNT_EXITS = DISCOUNT;
-                        }
-                    }
+                let discount = await models.Discount.findById({ _id: DISCOUNT_ID });
+                if (discount) {
+                    DISCOUNT_EXITS = discount;
                 }
             }
-            
+
             res.status(200).json({
                 product: resource.Product.product_list(Product, VARIEDADES, AVG_REVIEW, COUNT_REVIEW, DISCOUNT_EXITS),
-                reviews: REVIEWS
+                product_review: REVIEWS,
             });
         } catch (error) {
-            console.error('❌ ERROR en show_landing_product:', error);
+            console.error('❌ Error en show_landing_product:', error);
             res.status(500).send({
-                message: "OCURRIO UN PROBLEMA AL OBTENER EL PRODUCTO"
+                message: "OCURRIO ERROR"
             });
         }
     },

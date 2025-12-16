@@ -4,10 +4,8 @@ import resource from '../resources/index.js'
 export default {
     list: async(req, res) => {
         try {
-            // 🔴 OBTENER user_id del query o del token
             let user_id = req.query.user_id;
             
-            // Si NO viene user_id en query, usar el del token
             if (!user_id) {
                 if (!req.user || !req.user.sub) {
                     return res.status(401).json({
@@ -16,8 +14,6 @@ export default {
                 }
                 user_id = req.user.sub;
             }
-            
-            console.log('🔍 Obteniendo carrito del usuario:', user_id);
             
             let CARTS = await models.Cart.find({
                 user: user_id,
@@ -31,8 +27,6 @@ export default {
             CARTS = CARTS.map((cart) => {
                 return resource.Cart.cart_list(cart);
             });
-
-            console.log(`✅ Carrito obtenido: ${CARTS.length} items`);
 
             res.status(200).json({
                 carts: CARTS,
@@ -48,10 +42,7 @@ export default {
     register:async(req,res) => {
         try {
             let data = req.body;
-            
-            console.log('📝 Registrando en carrito:', data);
 
-            //PRIMERO VAMOS A VALIDAR SI EL PRODUCTO EXISTE EN EL CARRITO DE COMPRA
             if(data.variedad){
                 let valid_cart = await models.Cart.findOne({
                     user: data.user,
@@ -77,7 +68,6 @@ export default {
                 }
             }
 
-            //SEGUNDO VAMOS A VALIDAR SI EL STOCK ESTA DISPONIBLE
             if(data.variedad){
                 let valid_variedad = await models.Variedad.findById(data.variedad);
                 if(valid_variedad.stock < data.cantidad){
@@ -119,22 +109,52 @@ export default {
         }
     },
 
-    update:async(req,res) => {
+    update: async(req, res) => {
         try {
             let data = req.body;
 
-            //VALIDAR SI EL STOCK ESTA DISPONIBLE
-            if(data.variedad){
+            // Buscar el carrito actual
+            let cart = await models.Cart.findById(data._id);
+            
+            if (!cart) {
+                return res.status(404).json({
+                    message: 403,
+                    message_text: "EL CARRITO NO EXISTE"
+                });
+            }
+
+            // VALIDAR SI EL STOCK ESTA DISPONIBLE
+            if (data.variedad) {
+                // Inventario múltiple
                 let valid_variedad = await models.Variedad.findById(data.variedad);
-                if(valid_variedad.stock < data.cantidad){
+                
+                if (!valid_variedad) {
+                    console.error('❌ Variedad no encontrada:', data.variedad);
+                    return res.status(404).json({
+                        message: 403,
+                        message_text: "LA VARIEDAD NO EXISTE"
+                    });
+                }
+
+                if (valid_variedad.stock < data.cantidad) {
                     return res.status(200).json({
                         message: 403,
                         message_text: "EL STOCK NO ESTA DISPONIBLE"
                     });
                 }
-            }else{
-                let valid_product = await models.Product.findById(data.product);
-                if(valid_product.stock < data.cantidad){
+            } else {
+                // Inventario único
+                let valid_product = await models.Product.findById(data.product || cart.product);
+                
+                if (!valid_product) {
+                    console.error('❌ Producto no encontrado:', data.product || cart.product);
+                    return res.status(404).json({
+                        message: 403,
+                        message_text: "EL PRODUCTO NO EXISTE"
+                    });
+                }
+
+                if (valid_product.stock < data.cantidad) {
                     return res.status(200).json({
                         message: 403,
                         message_text: "EL STOCK NO ESTA DISPONIBLE"
@@ -142,6 +162,7 @@ export default {
                 }
             }
             
+            // Actualizar el carrito
             await models.Cart.findByIdAndUpdate(data._id, data);
             
             let NEW_CART = await models.Cart.findById(data._id)
@@ -160,7 +181,7 @@ export default {
         } catch (error) {
             console.error('❌ Error al actualizar carrito:', error);
             res.status(500).send({
-                message:"OCURRIO UN ERROR",
+                message: "OCURRIO UN ERROR",
             });
         }
     },

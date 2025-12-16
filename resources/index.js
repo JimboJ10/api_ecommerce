@@ -4,6 +4,7 @@ import Categorie from './Categorie.js'
 import Product from './Product.js'
 import Slider from './Slider.js'
 import Cart from './Cart.js'
+import Sale from './Sale.js'
 
 export default {
     User,
@@ -11,4 +12,5 @@ export default {
     Product,
     Slider,
     Cart,
+    Sale,
 }

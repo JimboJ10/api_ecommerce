@@ -189,5 +189,75 @@ export default {
             });
             console.log(error);
         }
-    }
+    },
+    change_password: async(req, res) => {
+        try {
+            const { user_id, current_password, new_password } = req.body;
+
+            console.log('🔐 Solicitud de cambio de contraseña para usuario:', user_id);
+
+            // Validar que vengan todos los datos
+            if (!user_id || !current_password || !new_password) {
+                return res.status(400).json({
+                    message: 400,
+                    message_text: "FALTAN DATOS REQUERIDOS"
+                });
+            }
+
+            // Buscar el usuario
+            const user = await models.User.findById(user_id);
+
+            if (!user) {
+                console.error('❌ Usuario no encontrado:', user_id);
+                return res.status(404).json({
+                    message: 404,
+                    message_text: "USUARIO NO ENCONTRADO"
+                });
+            }
+
+            // Verificar la contraseña actual
+            const isPasswordValid = await bcrypt.compare(current_password, user.password);
+
+            if (!isPasswordValid) {
+                console.error('❌ Contraseña actual incorrecta');
+                return res.status(401).json({
+                    message: 401,
+                    message_text: "LA CONTRASEÑA ACTUAL ES INCORRECTA"
+                });
+            }
+
+            // Validar que la nueva contraseña sea diferente
+            const isSamePassword = await bcrypt.compare(new_password, user.password);
+
+            if (isSamePassword) {
+                console.error('❌ Nueva contraseña igual a la actual');
+                return res.status(400).json({
+                    message: 400,
+                    message_text: "LA NUEVA CONTRASEÑA DEBE SER DIFERENTE A LA ACTUAL"
+                });
+            }
+
+            // Encriptar la nueva contraseña
+            const hashedPassword = await bcrypt.hash(new_password, 10);
+
+            // Actualizar la contraseña
+            await models.User.findByIdAndUpdate(user_id, {
+                password: hashedPassword
+            });
+
+            console.log('✅ Contraseña actualizada correctamente para:', user.email);
+
+            res.status(200).json({
+                message: 200,
+                message_text: "CONTRASEÑA ACTUALIZADA CORRECTAMENTE"
+            });
+
+        } catch (error) {
+            console.error('❌ Error al cambiar contraseña:', error);
+            res.status(500).json({
+                message: 500,
+                message_text: "ERROR AL CAMBIAR LA CONTRASEÑA"
+            });
+        }
+    },
 }
