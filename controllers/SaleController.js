@@ -8,7 +8,6 @@ import smtpTransport from 'nodemailer-smtp-transport';
 
 async function send_email(sale_id) {
     try {
-        console.log('📧 Iniciando envío de email para orden:', sale_id);
 
         var readHTMLFile = function(path, callback) {
             fs.readFile(path, {encoding: 'utf-8'}, function (err, html) {
@@ -26,12 +25,7 @@ async function send_email(sale_id) {
         let OrderDetail = await models.SaleDetail.find({sale: Order._id}).populate("product").populate("variedad");
         let AddressSale = await models.SaleAddress.findOne({sale: Order._id});
 
-        console.log('📦 Orden encontrada:', Order._id);
-        console.log('📦 Detalles de orden:', OrderDetail.length, 'items');
-        console.log('📍 Dirección:', AddressSale ? 'SÍ' : 'NO');
-        console.log('👤 Usuario:', Order.user.email);
-
-        // 🔴 CONFIGURAR TRANSPORTER CON tls: { rejectUnauthorized: false }
+        // CONFIGURAR TRANSPORTER CON tls: { rejectUnauthorized: false }
         var transporter = nodemailer.createTransport(smtpTransport({
             service: 'gmail',
             host: 'smtp.gmail.com',
@@ -42,7 +36,7 @@ async function send_email(sale_id) {
                 pass: 'gjfyjxshcifxcpki'
             },
             tls: {
-                rejectUnauthorized: false // 🔴 Aceptar certificados autofirmados
+                rejectUnauthorized: false // Aceptar certificados autofirmados
             }
         }));
 
@@ -51,8 +45,6 @@ async function send_email(sale_id) {
                 console.error('❌ Error al leer template:', err);
                 return;
             }
-
-            console.log('✅ Template HTML cargado');
                                 
             let rest_html = ejs.render(html, {
                 order: Order,
@@ -69,8 +61,6 @@ async function send_email(sale_id) {
                 subject: 'Confirmación de tu pedido #' + Order._id.toString().substring(Order._id.toString().length - 8),
                 html: htmlToSend
             };
-          
-            console.log('📤 Enviando email a:', Order.user.email);
 
             transporter.sendMail(mailOptions, function(error, info){
                 if (error) {
@@ -91,24 +81,17 @@ async function send_email(sale_id) {
 export default {
     register: async(req,res) => {
         try {
-            console.log('🛒 Procesando nueva orden...');
 
             let sale_data = req.body.sale;
             let sale_address_data = req.body.sale_address;
 
-            console.log('💰 Datos de venta:', sale_data);
-            console.log('📍 Dirección de envío:', sale_address_data);
-
             let SALE = await models.Sale.create(sale_data);
-            console.log('✅ Orden creada:', SALE._id);
 
             sale_address_data.sale = SALE._id;
 
             let SALE_ADDRESS = await models.SaleAddress.create(sale_address_data);
-            console.log('✅ Dirección guardada');
 
             let CARTS = await models.Cart.find({user: SALE.user});
-            console.log('🛒 Productos en carrito:', CARTS.length);
             
             for (let CART of CARTS) {
                 CART = CART.toObject();
@@ -122,7 +105,6 @@ export default {
                     await models.Variedad.findByIdAndUpdate({_id: CART.variedad},{
                         stock: new_stock,
                     });
-                    console.log('📉 Stock variedad actualizado:', VARIEDAD.valor, '→', new_stock);
                 } else {
                     let PRODUCT = await models.Product.findById({_id: CART.product});
                     let new_stock = PRODUCT.stock - CART.cantidad;
@@ -130,14 +112,11 @@ export default {
                     await models.Product.findByIdAndUpdate({_id: CART.product},{
                         stock: new_stock,
                     });
-                    console.log('📉 Stock producto actualizado:', PRODUCT.title, '→', new_stock);
                 }
 
                 await models.SaleDetail.create(CART);
                 await models.Cart.findByIdAndDelete({_id: CART._id});
             }
-
-            console.log('📧 Enviando email de confirmación...');
             await send_email(SALE._id);
 
             res.status(200).json({
@@ -166,14 +145,10 @@ export default {
                 user_id = req.user.sub;
             }
 
-            console.log('📦 Obteniendo órdenes del usuario:', user_id);
-
             // Buscar todas las órdenes del usuario
             let SALES = await models.Sale.find({ user: user_id })
                 .populate('user')
                 .sort({ createdAt: -1 });
-
-            console.log(`✅ Órdenes encontradas: ${SALES.length}`);
 
             res.status(200).json({
                 sales: SALES
@@ -191,8 +166,6 @@ export default {
         try {
             let sale_id = req.params.id;
             
-            console.log('🔍 Obteniendo detalle de orden:', sale_id);
-            
             let SALE = await models.Sale.findById({_id: sale_id}).populate("user");
             
             if (!SALE) {
@@ -207,11 +180,7 @@ export default {
             
             let SALE_ADDRESS = await models.SaleAddress.findOne({sale: sale_id});
 
-            console.log('✅ Orden encontrada:', SALE._id);
-            console.log('📦 Detalles:', SALE_DETAILS.length, 'items');
-            console.log('📍 Dirección:', SALE_ADDRESS ? 'SÍ' : 'NO');
-
-            // 🔴 FORMATEAR LOS DETALLES CON EL RESOURCE
+            // FORMATEAR LOS DETALLES CON EL RESOURCE
             SALE_DETAILS = SALE_DETAILS.map((detail) => {
                 return resource.Sale.sale_detail_list(detail);
             });
@@ -223,6 +192,138 @@ export default {
             });
         } catch (error) {
             console.error('❌ Error al obtener detalle de orden:', error);
+            res.status(500).send({
+                message: "HUBO UN ERROR",
+            });
+        }
+    },
+    list_all: async(req, res) => {
+        try {
+
+            let SALES = await models.Sale.find()
+                .populate('user')
+                .sort({ createdAt: -1 });
+
+            res.status(200).json({
+                sales: SALES
+            });
+
+        } catch (error) {
+            console.error('❌ Error al obtener todas las órdenes:', error);
+            res.status(500).send({
+                message: "HUBO UN ERROR AL OBTENER LAS ÓRDENES",
+            });
+        }
+    },
+
+    // Obtener estadísticas para el dashboard
+    stats: async(req, res) => {
+        try {
+
+            // Total de ventas
+            const totalSales = await models.Sale.countDocuments();
+
+            // Total de ingresos
+            const salesData = await models.Sale.find();
+            const totalRevenue = salesData.reduce((sum, sale) => sum + sale.total, 0);
+
+            // Total de usuarios
+            const totalUsers = await models.User.countDocuments({ rol: 'cliente' });
+
+            // Total de productos
+            const totalProducts = await models.Product.countDocuments({ state: 2 });
+
+            // Ventas de los últimos 7 días
+            const sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+            
+            const recentSales = await models.Sale.find({
+                createdAt: { $gte: sevenDaysAgo }
+            });
+
+            // Ventas por día (últimos 7 días)
+            const salesByDay = [];
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                date.setHours(0, 0, 0, 0);
+                
+                const nextDate = new Date(date);
+                nextDate.setDate(nextDate.getDate() + 1);
+                
+                const daySales = await models.Sale.find({
+                    createdAt: {
+                        $gte: date,
+                        $lt: nextDate
+                    }
+                });
+                
+                const dayRevenue = daySales.reduce((sum, sale) => sum + sale.total, 0);
+                
+                salesByDay.push({
+                    date: date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }),
+                    sales: daySales.length,
+                    revenue: dayRevenue
+                });
+            }
+
+            // Top 5 productos más vendidos
+            const topProducts = await models.SaleDetail.aggregate([
+                {
+                    $group: {
+                        _id: '$product',
+                        total_vendido: { $sum: '$cantidad' },
+                        total_ingresos: { $sum: '$total' }
+                    }
+                },
+                { $sort: { total_vendido: -1 } },
+                { $limit: 5 },
+                {
+                    $lookup: {
+                        from: 'products',
+                        localField: '_id',
+                        foreignField: '_id',
+                        as: 'producto'
+                    }
+                },
+                { $unwind: '$producto' }
+            ]);
+
+            // Últimas 5 ventas
+            const latestSales = await models.Sale.find()
+                .populate('user')
+                .sort({ createdAt: -1 })
+                .limit(5);
+
+            res.status(200).json({
+                totalSales,
+                totalRevenue,
+                totalUsers,
+                totalProducts,
+                recentSales: recentSales.length,
+                salesByDay,
+                topProducts: topProducts.map(item => ({
+                    product: {
+                        _id: item.producto._id,
+                        title: item.producto.title,
+                        portada: item.producto.portada
+                    },
+                    total_vendido: item.total_vendido,
+                    total_ingresos: item.total_ingresos
+                })),
+                latestSales: latestSales.map(sale => ({
+                    _id: sale._id,
+                    user: {
+                        name: sale.user.name,
+                        email: sale.user.email
+                    },
+                    total: sale.total,
+                    createdAt: sale.createdAt
+                }))
+            });
+
+        } catch (error) {
+            console.error('❌ Error al obtener estadísticas:', error);
             res.status(500).send({
                 message: "HUBO UN ERROR",
             });

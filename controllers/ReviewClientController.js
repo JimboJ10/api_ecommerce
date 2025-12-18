@@ -5,8 +5,6 @@ export default {
         try {
             let data = req.body;
 
-            console.log('📝 Registrando reseña:', data);
-
             // Validar que el usuario haya comprado el producto
             let sale_detail = await models.SaleDetail.findById(data.sale_detail);
             
@@ -37,8 +35,6 @@ export default {
                 .populate('user')
                 .populate('product');
 
-            console.log('✅ Reseña registrada:', review._id);
-
             res.status(200).json({
                 message: 200,
                 message_text: "LA RESEÑA HA SIDO REGISTRADA CORRECTAMENTE",
@@ -56,15 +52,11 @@ export default {
         try {
             let data = req.body;
 
-            console.log('🔄 Actualizando reseña:', data._id);
-
             await models.Review.findByIdAndUpdate({_id: data._id}, data);
 
             let review = await models.Review.findById({_id: data._id})
                 .populate('user')
                 .populate('product');
-
-            console.log('✅ Reseña actualizada');
 
             res.status(200).json({
                 message: 200,
@@ -79,14 +71,12 @@ export default {
         }
     },
 
-    // 🔴 NUEVO: Listar reseñas de un producto
+    // NUEVO: Listar reseñas de un producto
     list: async(req, res) => {
         try {
             let product_id = req.query.product_id;
 
-            console.log('📋 Obteniendo reseñas del producto:', product_id);
-
-            // 🔴 VALIDAR QUE product_id SEA UN ObjectId VÁLIDO
+            // VALIDAR QUE product_id SEA UN ObjectId VÁLIDO
             const isObjectId = /^[0-9a-fA-F]{24}$/.test(product_id);
             
             if (!isObjectId) {
@@ -102,8 +92,6 @@ export default {
                 .populate('sale_detail')
                 .sort({createdAt: -1});
 
-            console.log(`✅ Reseñas encontradas: ${reviews.length}`);
-
             res.status(200).json({
                 message: 200,
                 reviews: reviews
@@ -116,15 +104,13 @@ export default {
         }
     },
 
-    // 🔴 NUEVO: Verificar si el usuario puede dejar reseña
+    // Verificar si el usuario puede dejar reseña
     check: async(req, res) => {
         try {
             let user_id = req.query.user_id;
             let product_id = req.query.product_id;
 
-            console.log('🔍 Verificando si puede dejar reseña:', {user_id, product_id});
-
-            // 🔴 VALIDAR QUE product_id SEA UN ObjectId VÁLIDO
+            // VALIDAR QUE product_id SEA UN ObjectId VÁLIDO
             const isObjectId = /^[0-9a-fA-F]{24}$/.test(product_id);
             
             if (!isObjectId) {

@@ -8,12 +8,6 @@ export default {
 
             var TIME_NOW  = req.query.TIME_NOW;
 
-            let Sliders = await models.Slider.find({state:1});
-
-            Sliders = Sliders.map((slider) => {
-                return resource.Slider.slider_list(slider);
-            })
-
             let Categories = await models.Categorie.find({state:1});
 
             Categories = Categories.map((categorie) => {
@@ -22,10 +16,9 @@ export default {
             
             let CampaingDiscount = await models.Discount.findOne({
                 type_campaign: 1,
-                start_date_num: {$lte: TIME_NOW},// start_date_num >= TIME_NOW
-                end_date_num: {$gte: TIME_NOW},// >=
+                start_date_num: {$lte: TIME_NOW},
+                end_date_num: {$gte: TIME_NOW},
             });
-            // console.log(CampaingDiscount);
             let BestProducts = await models.Product.find({state: 2}).sort({"createdAt": -1});
 
             var ObjectBestProducts = [];
@@ -108,7 +101,6 @@ export default {
             }
             // console.log(FlashSale);
             res.status(200).json({
-                sliders: Sliders,
                 categories: Categories,
                 best_products: ObjectBestProducts,
                 our_products: ObjectOursProducts,
@@ -127,42 +119,87 @@ export default {
             let identifier = req.params.slug;
             let DISCOUNT_ID = req.query._id;
             
-            console.log('🔍 Buscando producto con identificador:', identifier);
-            console.log('🔍 Discount ID:', DISCOUNT_ID);
-            
-            // 🔴 BUSCAR POR SLUG O POR _ID
+            // BUSCAR POR SLUG O POR _ID
             let Product;
             
             // Verificar si es un ObjectId válido (24 caracteres hexadecimales)
             const isObjectId = /^[0-9a-fA-F]{24}$/.test(identifier);
             
             if (isObjectId) {
-                console.log('🆔 Es un ObjectId, buscando por _id...');
-                Product = await models.Product.findOne({ _id: identifier, state: 2 }).populate('categorie');
+                Product = await models.Product.findById(identifier).populate('categorie');
             } else {
-                console.log('🔖 Es un slug, buscando por slug...');
-                Product = await models.Product.findOne({ slug: identifier, state: 2 }).populate('categorie');
+                Product = await models.Product.findOne({ slug: identifier }).populate('categorie');
             }
             
             if (!Product) {
-                console.error('❌ Producto no encontrado con identificador:', identifier);
                 return res.status(404).json({
-                    message: 'PRODUCTO NO ENCONTRADO'
+                    message: "NO SE ENCONTRÓ EL PRODUCTO"
                 });
             }
             
-            console.log('✅ Producto encontrado:', Product.title);
             
             let VARIEDADES = await models.Variedad.find({ product: Product._id });
             let REVIEWS = await models.Review.find({ product: Product._id }).populate('user');
             let AVG_REVIEW = REVIEWS.length > 0 ? Math.ceil(REVIEWS.reduce((sum, item) => sum + item.cantidad, 0) / REVIEWS.length) : 0;
             let COUNT_REVIEW = REVIEWS.length;
 
+            // BUSCAR DESCUENTOS ACTIVOS
             let DISCOUNT_EXITS = null;
-            if (DISCOUNT_ID) {
-                let discount = await models.Discount.findById({ _id: DISCOUNT_ID });
-                if (discount) {
-                    DISCOUNT_EXITS = discount;
+            let TIME_NOW = new Date().getTime();
+
+            // Buscar descuento por campaña normal (type_campaign: 1)
+            let CampaingDiscount = await models.Discount.findOne({
+                type_campaign: 1,
+                state: 1,
+                start_date_num: { $lte: TIME_NOW },
+                end_date_num: { $gte: TIME_NOW },
+            });
+
+            if (CampaingDiscount) {
+                // Verificar si el producto está en el descuento
+                if (CampaingDiscount.type_segment === 1) {
+                    // Por producto
+                    let PRODUCT_EXITS = CampaingDiscount.products.find(
+                        (prod) => prod._id.toString() === Product._id.toString()
+                    );
+                    if (PRODUCT_EXITS) {
+                        DISCOUNT_EXITS = CampaingDiscount;
+                    }
+                } else if (CampaingDiscount.type_segment === 2) {
+                    // Por categoría
+                    let CATEGORIE_EXITS = CampaingDiscount.categories.find(
+                        (cat) => cat._id.toString() === Product.categorie._id.toString()
+                    );
+                    if (CATEGORIE_EXITS) {
+                        DISCOUNT_EXITS = CampaingDiscount;
+                    }
+                }
+            }
+
+            // BUSCAR DESCUENTO FLASH SALE (type_campaign: 2)
+            let FlashSale = await models.Discount.findOne({
+                type_campaign: 2,
+                state: 1,
+                start_date_num: { $lte: TIME_NOW },
+                end_date_num: { $gte: TIME_NOW },
+            });
+
+            if (FlashSale) {
+                // Verificar si el producto está en Flash Sale
+                if (FlashSale.type_segment === 1) {
+                    let PRODUCT_EXITS = FlashSale.products.find(
+                        (prod) => prod._id.toString() === Product._id.toString()
+                    );
+                    if (PRODUCT_EXITS) {
+                        DISCOUNT_EXITS = FlashSale;
+                    }
+                } else if (FlashSale.type_segment === 2) {
+                    let CATEGORIE_EXITS = FlashSale.categories.find(
+                        (cat) => cat._id.toString() === Product.categorie._id.toString()
+                    );
+                    if (CATEGORIE_EXITS) {
+                        DISCOUNT_EXITS = FlashSale;
+                    }
                 }
             }
 
@@ -173,7 +210,7 @@ export default {
         } catch (error) {
             console.error('❌ Error en show_landing_product:', error);
             res.status(500).send({
-                message: "OCURRIO ERROR"
+                message: "OCURRIÓ UN ERROR"
             });
         }
     },
@@ -295,7 +332,6 @@ export default {
                 var img_path = req.files.avatar.path;
                 var name = img_path.split('\\');
                 var avatar_name = name[2];
-                console.log(avatar_name)
             }
             if(req.body.password){
                 req.body.password = await bcrypt.hash(req.body.password,10);
@@ -338,8 +374,6 @@ export default {
         var TIME_NOW = req.query.TIME_NOW;
         var filters = req.body;
 
-        console.log('🔍 Filtros recibidos:', filters);
-
         // Construir query de filtros
         var query = { state: 2 }; // Solo productos públicos
 
@@ -364,15 +398,11 @@ export default {
             ];
         }
 
-        console.log('🔎 Query construido:', query);
-
         // Buscar productos con populate
         let Products = await models.Product.find(query)
             .populate('categorie')
             .sort({ createdAt: -1 })
             .limit(50);
-
-        console.log(`✅ Productos encontrados: ${Products.length}`);
 
         // Buscar descuentos activos
         let CampaingDiscount = await models.Discount.findOne({

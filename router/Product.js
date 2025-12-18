@@ -15,7 +15,6 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage })
 const router = routerx();
-// http://localhost:3000/api/users/register
 
 router.post("/register",[auth.verifyAdmin, upload.single('portada')],productController.register);
 

@@ -2,7 +2,6 @@ import routerx from 'express-promise-router'
 import AddressClientController from '../controllers/AddressClientController.js'
 import auth from '../middlewares/auth.js'
 const router = routerx();
-// http://localhost:3000/api/users/register
 
 router.post("/register",auth.verifyEcommerce,AddressClientController.register);
 router.put("/update",auth.verifyEcommerce,AddressClientController.update);

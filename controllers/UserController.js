@@ -57,7 +57,6 @@ export default {
                 if(compare){
                     let tokenT = await token.encode(user._id, user.rol, user.email);
 
-                    // 🔴 CAMBIAR ESTRUCTURA DE RESPUESTA
                     res.status(200).json({
                         token: tokenT,
                         user: {
@@ -133,7 +132,6 @@ export default {
                 var img_path = req.files.avatar.path;
                 var name = img_path.split('\\');
                 var avatar_name = name[2];
-                console.log(avatar_name)
             }
             if(req.body.password){
                 req.body.password = await bcrypt.hash(req.body.password,10);
@@ -194,8 +192,6 @@ export default {
         try {
             const { user_id, current_password, new_password } = req.body;
 
-            console.log('🔐 Solicitud de cambio de contraseña para usuario:', user_id);
-
             // Validar que vengan todos los datos
             if (!user_id || !current_password || !new_password) {
                 return res.status(400).json({
@@ -244,8 +240,6 @@ export default {
             await models.User.findByIdAndUpdate(user_id, {
                 password: hashedPassword
             });
-
-            console.log('✅ Contraseña actualizada correctamente para:', user.email);
 
             res.status(200).json({
                 message: 200,

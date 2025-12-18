@@ -5,7 +5,7 @@ const router = routerx();
 
 router.post("/register", auth.verifyEcommerce, ReviewClientController.register);
 router.put("/update", auth.verifyEcommerce, ReviewClientController.update);
-router.get("/list", ReviewClientController.list); // 🔴 NUEVO
-router.get("/check", auth.verifyEcommerce, ReviewClientController.check); // 🔴 NUEVO
+router.get("/list", ReviewClientController.list);
+router.get("/check", auth.verifyEcommerce, ReviewClientController.check);
 
 export default router;

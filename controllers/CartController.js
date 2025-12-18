@@ -43,6 +43,7 @@ export default {
         try {
             let data = req.body;
 
+            // Validar si ya existe en el carrito
             if(data.variedad){
                 let valid_cart = await models.Cart.findOne({
                     user: data.user,
@@ -68,12 +69,13 @@ export default {
                 }
             }
 
+            // Validar stock
             if(data.variedad){
                 let valid_variedad = await models.Variedad.findById(data.variedad);
                 if(valid_variedad.stock < data.cantidad){
                     return res.status(200).json({
                         message: 403,
-                        message_text: "EL STOCK NO ESTA DISPONIBLE"
+                        message_text: "EL STOCK DE LA VARIEDAD NO ESTÁ DISPONIBLE",
                     });
                 }
             }else{
@@ -81,10 +83,35 @@ export default {
                 if(valid_product.stock < data.cantidad){
                     return res.status(200).json({
                         message: 403,
-                        message_text: "EL STOCK NO ESTA DISPONIBLE"
+                        message_text: "EL STOCK DEL PRODUCTO NO ESTÁ DISPONIBLE",
                     });
                 }
             }
+
+            // 🔴 CALCULAR PRECIOS CORRECTAMENTE
+            const producto = await models.Product.findById(data.product);
+            const precioOriginal = producto.price_usd;
+
+            // 🔴 PRECIO UNITARIO = PRECIO ORIGINAL (sin descuento)
+            data.price_unitario = precioOriginal;
+
+            // 🔴 CALCULAR SUBTOTAL (sin descuento)
+            data.subtotal = precioOriginal * data.cantidad;
+
+            // 🔴 CALCULAR TOTAL (con descuento)
+            let precioFinal = precioOriginal;
+            
+            if (data.discount && data.discount > 0) {
+                if (data.type_discount === 1) {
+                    // Descuento por porcentaje
+                    precioFinal = precioOriginal - (precioOriginal * data.discount / 100);
+                } else {
+                    // Descuento por monto fijo
+                    precioFinal = precioOriginal - data.discount;
+                }
+            }
+
+            data.total = precioFinal * data.cantidad;
             
             let CART = await models.Cart.create(data);
             

@@ -2,7 +2,6 @@ import token from '../services/token.js'
 
 export default {
     verifyEcommerce: async(req,res,next) => {
-        // 🔴 CAMBIAR: Buscar en Authorization header
         const authHeader = req.headers.authorization || req.headers.token;
         
         if(!authHeader){
@@ -10,8 +9,6 @@ export default {
                 message: 'NO SE ENVIO EL TOKEN'
             });
         }
-
-        // 🔴 EXTRAER TOKEN (puede venir como "Bearer TOKEN" o solo "TOKEN")
         const tokenValue = authHeader.startsWith('Bearer ') 
             ? authHeader.split(' ')[1] 
             : authHeader;
@@ -22,7 +19,6 @@ export default {
         
         if(response){
             if(response.rol == "cliente" || response.rol == "admin"){
-                // 🔴 AGREGAR req.user CON LOS DATOS DECODIFICADOS
                 req.user = {
                     sub: response._id,
                     rol: response.rol,
