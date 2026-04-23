@@ -33,7 +33,7 @@ async function send_email(sale_id) {
             secure: false, // true para 465, false para otros puertos
             auth: {
                 user: 'jimbojordy383@gmail.com',
-                pass: 'gjfyjxshcifxcpki'
+                pass: 'rqezqdodoblkriss'
             },
             tls: {
                 rejectUnauthorized: false // Aceptar certificados autofirmados
