@@ -6,11 +6,8 @@ import path from 'path'
 export default {
     register: async(req,res) => {
         try {
-            if(req.file){
-                var img_path = req.file.path;
-                var name = img_path.split('\\');
-                var portada_name = name[2];
-                req.body.imagen = portada_name;
+            if (req.file?.path) {
+                req.body.imagen = path.basename(req.file.path);
             }
             const categorie = await models.Categorie.create(req.body);
             res.status(200).json(categorie);
@@ -23,11 +20,8 @@ export default {
     },
     update: async(req,res) => {
         try {
-            if(req.file){
-                var img_path = req.file.path;
-                var name = img_path.split('\\');
-                var portada_name = name[2];
-                req.body.imagen = portada_name;
+            if (req.file?.path) {
+                req.body.imagen = path.basename(req.file.path);
             }
             await models.Categorie.findByIdAndUpdate({_id: req.body._id},req.body);
 

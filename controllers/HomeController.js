@@ -1,6 +1,7 @@
 import models from '../models/index.js'
 import resource from '../resources/index.js'
 import bcrypt from 'bcryptjs'
+import path from 'path'
 
 export default {
     list:async(req,res) => {
@@ -280,10 +281,8 @@ export default {
     },
     update_client: async(req,res) => {
         try {
-            if(req.files){
-                var img_path = req.files.avatar.path;
-                var name = img_path.split('\\');
-                var avatar_name = name[2];
+            if (req.files?.avatar?.path) {
+                req.body.avatar = path.basename(req.files.avatar.path);
             }
             if(req.body.password){
                 req.body.password = await bcrypt.hash(req.body.password,10);

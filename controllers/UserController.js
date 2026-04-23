@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs'
 import models from '../models/index.js'
 import token from '../services/token.js'
 import resource from '../resources/index.js'
+import path from 'path'
 
 export default {
     register: async(req,res) => {
@@ -128,10 +129,8 @@ export default {
     },
     update: async(req,res) => {
         try {
-            if(req.files){
-                var img_path = req.files.avatar.path;
-                var name = img_path.split('\\');
-                var avatar_name = name[2];
+            if (req.files?.avatar?.path) {
+                req.body.avatar = path.basename(req.files.avatar.path);
             }
             if(req.body.password){
                 req.body.password = await bcrypt.hash(req.body.password,10);

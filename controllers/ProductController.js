@@ -21,10 +21,8 @@ export default {
             data.slug = data.title.toLowerCase().replace(/ /g,'-').replace(/[^\w-]+/g,'');
             
             // CAMBIAR: de req.files a req.file (singular)
-            if(req.file){
-                var img_path = req.file.path;
-                var name = img_path.split('\\');
-                var portada_name = name[2];
+            if (req.file?.path) {
+                const portada_name = path.basename(req.file.path);
                 data.portada = portada_name;
             }
 
@@ -58,10 +56,8 @@ export default {
             data.slug = data.title.toLowerCase().replace(/ /g,'-').replace(/[^\w-]+/g,'');
             
             // CAMBIAR: de req.files a req.file (singular)
-            if(req.file){
-                var img_path = req.file.path;
-                var name = img_path.split('\\');
-                var portada_name = name[2];
+            if (req.file?.path) {
+                const portada_name = path.basename(req.file.path);
                 data.portada = portada_name;
             }
 
@@ -162,9 +158,10 @@ export default {
     register_imagen:async(req,res) => {
         try {
             // CAMBIAR: de req.files a req.file
-            var img_path = req.file.path;
-            var name = img_path.split('\\');
-            var imagen_name = name[2];
+            if (!req.file?.path) {
+                return res.status(400).json({ message: "NO SE RECIBIO IMAGEN" });
+            }
+            const imagen_name = path.basename(req.file.path);
             
             let product = await models.Product.findByIdAndUpdate({_id: req.body._id},{
                 $push: {
