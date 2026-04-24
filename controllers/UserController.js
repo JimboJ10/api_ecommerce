@@ -7,15 +7,32 @@ import path from 'path'
 export default {
     register: async(req,res) => {
         try {
-            // rol
-            // name
-            // surname
-            // email
-            // password
+            const email = (req.body.email || '').toLowerCase().trim();
+
+            if (!email || !req.body.password || !req.body.name) {
+                return res.status(400).send({
+                    message: 'FALTAN DATOS REQUERIDOS'
+                });
+            }
+
+            const userV = await models.User.findOne({ email });
+            if (userV) {
+                return res.status(409).send({
+                    message: 'EL CORREO YA ESTA REGISTRADO'
+                });
+            }
+
+            req.body.email = email;
             req.body.password = await bcrypt.hash(req.body.password,10);
             const user = await models.User.create(req.body);
             res.status(200).json(user);
         } catch (error) {
+            if (error?.code === 11000) {
+                return res.status(409).send({
+                    message: 'EL CORREO YA ESTA REGISTRADO'
+                });
+            }
+
             res.status(500).send({
                 message: "OCURRIO UN PROBLEMA"
             });
@@ -50,7 +67,8 @@ export default {
     },
     login: async(req,res) => {
         try {
-            const user = await models.User.findOne({email: req.body.email, state:1});
+            const email = (req.body.email || '').toLowerCase().trim();
+            const user = await models.User.findOne({email: email, state:1});
             
             if(user){
                 let compare = await bcrypt.compare(req.body.password, user.password);
