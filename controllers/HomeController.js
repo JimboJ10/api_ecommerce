@@ -244,7 +244,7 @@ export default {
                             title: detail_order.product.title,
                             sku: detail_order.product.sku,
                             slug: detail_order.product.slug,
-                            imagen: process.env.URL_BACKEND+'/api/products/uploads/product/'+detail_order.product.portada,//*
+                            imagen: detail_order.product.portada.startsWith('http') ? detail_order.product.portada : process.env.URL_BACKEND+'/api/products/uploads/product/'+detail_order.product.portada,
                             categorie: detail_order.product.categorie,
                             price_usd: detail_order.product.price_usd,
                         },
