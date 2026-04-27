@@ -46,7 +46,7 @@ export default {
     },
     remove:async(req,res) => {
         try {
-            await models.AddressClient.findByIdAndDelete({_id: req.params._id});
+            await models.AddressClient.findByIdAndDelete({_id: req.params.id});
             res.status(200).json({
                 message: "LA DIRECCIÓN DEL CLIENTE SE ELIMINO CORRECTAMENTE",
             });
