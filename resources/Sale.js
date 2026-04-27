@@ -8,7 +8,7 @@ export default {
                 title: sale_detail.product.title,
                 sku: sale_detail.product.sku,
                 slug: sale_detail.product.slug,
-                imagen: process.env.URL_BACKEND + '/api/products/uploads/product/' + sale_detail.product.portada,
+                imagen: sale_detail.product.portada.startsWith('http') ? sale_detail.product.portada : process.env.URL_BACKEND + '/api/products/uploads/product/' + sale_detail.product.portada,
                 categorie: sale_detail.product.categorie,
                 price_usd: sale_detail.product.price_usd,
                 type_inventario: sale_detail.product.type_inventario,
