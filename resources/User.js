@@ -4,6 +4,7 @@ export default {
             _id: user._id,
             name: user.name,
             surname: user.surname,
+            dni: user.dni,
             email: user.email,
             avatar: user.avatar,
             rol: user.rol,

@@ -4,6 +4,7 @@ const UserSchema = new Schema({
     rol:{type: String,maxlength:30,required:true},
     name:{type: String,maxlength:250,required:true},
     surname:{type: String,maxlength:250,required:false},
+    dni:{type: String,maxlength:50,required:false},
     email:{type: String,maxlength:250,required:true,unique:true},
     password:{type: String,maxlength:250,required:true},
     avatar:{type: String,maxlength:250,required:false},

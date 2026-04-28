@@ -3,6 +3,12 @@ import models from "../models/index.js";
 export default {
     register:async(req,res) => {
         try {
+            if (!req.body.dni) {
+                return res.status(400).send({
+                    message: "EL DNI O CÉDULA ES REQUERIDO",
+                });
+            }
+
             const address_client = await models.AddressClient.create(req.body);
             res.status(200).json({
                 message: "LA DIRECCIÓN DEL CLIENTE SE REGISTRO CORRECTAMENTE",
@@ -17,6 +23,12 @@ export default {
     },
     update:async(req,res) => {
         try {
+            if (!req.body.dni) {
+                return res.status(400).send({
+                    message: "EL DNI O CÉDULA ES REQUERIDO",
+                });
+            }
+
             let data = req.body;
             await models.AddressClient.findByIdAndUpdate({_id: req.body._id},data);
             let AddressClient = await models.AddressClient.findById({_id: req.body._id});

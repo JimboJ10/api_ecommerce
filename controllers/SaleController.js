@@ -85,6 +85,12 @@ export default {
             let sale_data = req.body.sale;
             let sale_address_data = req.body.sale_address;
 
+            if (!sale_address_data?.dni) {
+                return res.status(400).json({
+                    message: "EL DNI O CÉDULA ES REQUERIDO PARA GENERAR LA ORDEN",
+                });
+            }
+
             let SALE = await models.Sale.create(sale_data);
 
             sale_address_data.sale = SALE._id;

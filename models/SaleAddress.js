@@ -4,6 +4,7 @@ const SaleAddressSchema = new Schema({
     sale:{type:Schema.ObjectId,ref: 'sale',required:true},
     name:{type:String,maxlength : 250,required:true},
     surname:{type:String,maxlength : 250,required:true},
+    dni:{type:String,maxlength: 50,required:true},
     pais:{type:String,maxlength: 250, required:true},
     address:{type:String,maxlength: 250, required:true},
     referencia:{type:String,maxlength: 250, required:false},
