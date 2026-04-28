@@ -155,7 +155,18 @@ export default {
             if(req.body.password){
                 req.body.password = await bcrypt.hash(req.body.password,10);
             }
+            if (req.body.dni !== undefined) {
+                req.body.dni = (req.body.dni || '').trim();
+            }
+
             await models.User.findByIdAndUpdate({_id: req.body._id},req.body);
+
+            if (req.body.dni !== undefined && req.body._id) {
+                await models.AddressClient.updateMany(
+                    { user: req.body._id },
+                    { $set: { dni: req.body.dni } }
+                );
+            }
 
             let UserT = await models.User.findOne({_id: req.body._id});
             res.status(200).json({
